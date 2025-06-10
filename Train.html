@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+
+
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Smart Railway Seat Booking</title>
+  <link rel="stylesheet" href="style.css" />
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f1f1f1;
+    }
+    h1 {
+      color: #2d2d2d;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+    }
+    select, button {
+      padding: 10px;
+      width: 100%;
+      margin-bottom: 15px;
+    }
+    #ticketInfo {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+    }
+    #qrcode {
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body  >
+
+
+
+  <div class="container">
+    <h3>Train Timing Predictor</h3>
+    <input type="text" id="trainNumberInput" placeholder="Enter Train Number">
+    <button onclick="predictTrainTime()">Predict Arrival Time</button>
+    <p id="timingResult"></p>
+
+    <hr style="margin: 30px 0; border-color: rgba(255,255,255,0.2);">
+
+    <h3>Register a Complaint</h3>
+    <textarea id="complaintText" placeholder="Write your complaint here..."></textarea>
+    <button onclick="analyzeComplaint()">Submit Complaint</button>
+    <p id="complaintResult"></p>
+  </div>
+
+
+
+
+    <div id="authDiv">
+  <h2>Login / Signup</h2>
+  <input type="email" id="email" placeholder="Email" />
+  <input type="password" id="password" placeholder="Password" />
+  <button onclick="signup()">Sign Up</button>
+  <button onclick="login()">Login</button>
+  <p id="authMessage"></p>
+</div>
+
+<div id="appDiv" style="display:none;">
+  <!-- Yahan booking forms ya data dikhayenge -->
+  <h3>Welcome, <span id="userEmail"></span></h3>
+  <button onclick="logout()">Logout</button>
+
+  <!-- Booking form code yahan rakh -->
+</div>
+<select id="trainListForBooking">
+  <option value="">Select Train</option>
+</select>
+
+<select id="boardingStation"></select>
+<select id="destinationStation"></select>
+
+
+<div id="userBookings">
+  <h3>Your Bookings</h3>
+  <ul id="bookingList"></ul>
+</div>
+
+<div id="complaintSection">
+  <h3>File a Complaint / Feedback</h3>
+  <textarea id="complaintText" placeholder="Type your complaint or feedback here..." rows="4" cols="50"></textarea><br/>
+  <button onclick="submitComplaint()">Submit Complaint</button>
+  <p id="complaintMsg"></p>
+</div>
+
+<div id="trainSelection">
+  <h3>Select Train & Route</h3>
+  <select id="trainList" onchange="updateRoute()">
+    <option value="">Select Train</option>
+  </select>
+
+  <div id="routeInfo" style="margin-top:10px;">
+    <p><b>Route:</b> <span id="routeDisplay"></span></p>
+    <p><b>Available Classes:</b> <span id="classDisplay"></span></p>
+  </div>
+</div>
+
+
+<div>
+  <h3>Train Timing Predictor</h3>
+  <input type="text" id="trainNumberInput" placeholder="Enter Train Number">
+  <button onclick="predictTrainTime()">Predict Arrival Time</button>
+  <p id="timingResult"></p>
+</div>
+
+
+<div>
+  <h3>Register a Complaint</h3>
+  <textarea id="complaintText" placeholder="Write your complaint here..."></textarea><br>
+  <button onclick="analyzeComplaint()">Submit Complaint</button>
+  <p id="complaintResult"></p>
+</div>
+
+
+  <h1>🚆 Smart Railway Seat Booking</h1>
+
+  <label>From Station:</label>
+  <select id="fromStation">
+    <option value="Patna">Patna</option>
+    <option value="Buxar">Buxar</option>
+    <option value="Mughalsarai">Mughalsarai</option>
+  </select>
+
+  <label>To Station:</label>
+  <select id="toStation">
+    <option value="Kota">Kota</option>
+    <option value="Jaipur">Jaipur</option>
+    <option value="Delhi">Delhi</option>
+  </select>
+
+  <label>Boarding Station:</label>
+  <select id="boardingStation">
+    <option value="Patna">Patna</option>
+    <option value="Buxar">Buxar</option>
+    <option value="Mughalsarai">Mughalsarai</option>
+  </select>
+
+  <label>Choose Seat:</label>
+  <select id="seatSelect">
+    <option value="S1-23">S1 - Seat 23</option>
+    <option value="S1-24">S1 - Seat 24</option>
+    <option value="S2-10">S2 - Seat 10</option>
+  </select>
+
+  <button onclick="bookSeat()">✅ Book My Seat</button>
+
+  <div id="ticketInfo">
+    <h2>🎫 Your Ticket Info</h2>
+    <p id="routeInfo"></p>
+    <p id="seatInfo"></p>
+    <p id="boardInfo"></p>
+    <div id="qrcode"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.min.js"></script>
+  <script>
+    function bookSeat() {
+      const from = document.getElementById("fromStation").value;
+      const to = document.getElementById("toStation").value;
+      const board = document.getElementById("boardingStation").value;
+      const seat = document.getElementById("seatSelect").value;
+
+      document.getElementById("ticketInfo").style.display = "block";
+      document.getElementById("routeInfo").innerText = `From: ${from} → To: ${to}`;
+      document.getElementById("seatInfo").innerText = `Seat: ${seat}`;
+      document.getElementById("boardInfo").innerText = `Boarding at: ${board}`;
+
+      // QR Code content
+      const qrContent = `Ticket: ${from} to ${to}\nSeat: ${seat}\nBoarding: ${board}`;
+      document.getElementById("qrcode").innerHTML = ""; // clear previous
+      QRCode.toCanvas(document.createElement("canvas"), qrContent, function (error, canvas) {
+        if (error) console.error(error);
+        document.getElementById("qrcode").appendChild(canvas);
+      });
+    }
+  </script>
+  <h2>🚆 Class-wise Seat Booking</h2>
+
+<label>Select Class:</label>
+<select id="coachClass" onchange="updateSeatsByClass()">
+  <option value="1AC">First AC</option>
+  <option value="2AC">Second AC</option>
+  <option value="3AC">Third AC</option>
+  <option value="GEN">General</option>
+</select>
+
+<label>Choose Seat:</label>
+<select id="seatByClass">
+  <!-- Auto-filled -->
+</select>
+
+<button onclick="bookByClass()">✅ Book Seat</button>
+
+
+<div id="bookedClassInfo" style="margin-top: 20px;"></div>
+
+<script>
+  // Dummy seat data based on class
+  const classSeat = {
+    "1AC": ["A1-1", "A1-2", "A1-3"],
+    "2AC": ["B1-5", "B1-6", "B1-7"],
+    "3AC": ["C1-10", "C1-11", "C1-12"],
+    "GEN": ["G1-20", "G1-21", "G1-22"]
+  };
+
+  function updateSeatsByClass() {
+    const selectedClass = document.getElementById("coachClass").value;
+    const seatDropdown = document.getElementById("seatByClass");
+
+    // Clear previous options
+    seatDropdown.innerHTML = "";
+
+    // Add new options
+    classSeats[selectedClass].forEach(seat => {
+      const option = document.createElement("option");
+      option.value = seat;
+      option.innerText = seat;
+      seatDropdown.appendChild(option);
+    });
+  }
+
+  // Initialize on page load
+  updateSeatsByClass();
+
+  function bookByClass() {
+    const cls = document.getElementById("coachClass").value;
+    const seat = document.getElementById("seatByClass").value;
+
+    document.getElementById("bookedClassInfo").innerHTML = `
+      <h3>🎫 Ticket Confirmed</h3>
+      <p>Class: <b>${cls}</b></p>
+      <p>Seat: <b>${seat}</b></p>
+    `;
+  }
+</script>
+
+<script>
+  // Firebase config - apni Firebase Console se ye values lena
+  const firebaseConfig = {
+    apiKey: "YOUR_API_KEY",
+    authDomain: "YOUR_AUTH_DOMAIN",
+    projectId: "YOUR_PROJECT_ID",
+    storageBucket: "YOUR_STORAGE_BUCKET",
+    messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
+    appId: "YOUR_APP_ID"
+  };
+
+  // Initialize Firebase
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.firestore();
+
+  const classSeats = {
+    "1AC": ["A1-1", "A1-2", "A1-3"],
+    "2AC": ["B1-5", "B1-6", "B1-7"],
+    "3AC": ["C1-10", "C1-11", "C1-12"],
+    "GEN": ["G1-20", "G1-21", "G1-22"]
+  };
+
+  function updateSeatsByClass() {
+    const selectedClass = document.getElementById("coachClass").value;
+    const seatDropdown = document.getElementById("seatByClass");
+    seatDropdown.innerHTML = "";
+    classSeats[selectedClass].forEach(seat => {
+      const option = document.createElement("option");
+      option.value = seat;
+      option.innerText = seat;
+      seatDropdown.appendChild(option);
+    });
+  }
+
+  // Booking function with Firestore save
+  async function bookByClass() {
+    const cls = document.getElementById("coachClass").value;
+    const seat = document.getElementById("seatByClass").value;
+
+    try {
+      // Save booking data to Firestore collection "bookings"
+      await db.collection("bookings").add({
+        class: cls,
+        seat: seat,
+        timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+      document.getElementById("bookedClassInfo").innerHTML = `
+        <h3>🎫 Ticket Confirmed</h3>
+        <p>Class: <b>${cls}</b></p>
+        <p>Seat: <b>${seat}</b></p>
+        <p style="color:green;">Booking saved successfully!</p>
+      `;
+    } catch (error) {
+      document.getElementById("bookedClassInfo").innerHTML = `
+        <p style="color:red;">Error saving booking: ${error.message}</p>
+      `;
+    }
+  }
+
+  // Initialize seat dropdown on page load
+  updateSeatsByClass();
+
+
+  function loadUserBookings(user) {
+  const bookingList = document.getElementById("bookingList");
+  bookingList.innerHTML = "Loading...";
+
+  db.collection("bookings")
+    .where("userId", "==", user.uid)
+    .orderBy("timestamp", "desc")
+    .onSnapshot(snapshot => {
+      bookingList.innerHTML = ""; // Clear old list
+      if (snapshot.empty) {
+        bookingList.innerHTML = "<li>No bookings found</li>";
+        return;
+      }
+
+      snapshot.forEach(doc => {
+        const booking = doc.data();
+        const li = document.createElement("li");
+        li.textContent = `Class: ${booking.class}, Seat: ${booking.seat}, Booked At: ${booking.timestamp?.toDate().toLocaleString() || 'N/A'}`;
+        bookingList.appendChild(li);
+      });
+    });
+}
+</script>
+
+
+
+<script src="jss.js"></script>
+
+</body>
+</html>
